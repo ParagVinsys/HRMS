@@ -1,0 +1,11 @@
+package com.vinsys.attendance;
+
+public class SwipeDataVO {
+	
+	private long cartNo;
+	private long orgId;
+	private String swipeDateTime;
+	private String direction;
+	private String remarks;
+
+}

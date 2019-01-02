@@ -1,0 +1,245 @@
+package com.vinsys.attendance;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+import org.apache.commons.io.monitor.FileAlterationListener;
+import org.apache.commons.io.monitor.FileAlterationListenerAdaptor;
+import org.apache.commons.io.monitor.FileAlterationMonitor;
+import org.apache.commons.io.monitor.FileAlterationObserver;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+
+@SpringBootApplication
+@EnableScheduling
+@PropertySource(value = "${APPCONFIG}")
+public class LauncherApplication {
+	private static final Logger log = LoggerFactory.getLogger(LauncherApplication.class);
+	@Value("${BASE_URL}")
+	private String baseURL;
+	@Value("${ORG_ID}")
+	private long orgId;
+	@Value("${MONITOR_DIRECTORY}")
+	private String monitorDirectory;
+	@Value("${MONITOR_INTERVAL}")
+	private long monitorInterval;
+	@Value("${MDB_FILE_PATH}")
+	private String mdbPath;
+	
+	
+	public static void main(String[] args) {
+		log.info("Starting Application..."); 
+		SpringApplication.run(LauncherApplication.class, args);
+	}
+	
+	@Bean
+	//@Scheduled(cron = "0 12 19 14 12 2018")
+	public void csvDataUploader() throws Exception {
+
+		log.info("Starting CSV Uploader..."); 
+		System.out.println("BASE URL:"+baseURL);
+		try {
+			
+			FileAlterationObserver observer = new FileAlterationObserver(monitorDirectory);
+			FileAlterationMonitor monitor = new FileAlterationMonitor(monitorInterval);
+
+			FileAlterationListener listener = new FileAlterationListenerAdaptor() {
+				@Override
+				public void onFileCreate(File file) {
+					// code for processing creation event
+					System.out.println("NEW FILE CREATED" + file.getAbsolutePath());
+					log.info("NEW FILE CREATED: "+file.getName()); 
+					
+					try {
+						sendFileForProcessing(file);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						log.error("ERROR ON FILE CREATE EVENT:"+file.getName()+" :: "+e.getMessage()); 
+						e.printStackTrace();
+					}
+				}
+
+				@Override
+				public void onFileDelete(File file) {
+					// code for processing deletion event
+					System.out.println("FILE DELETED" + file.getName());
+					log.info("FILE DELETED: "+file.getName());
+				}
+
+				@Override
+				public void onFileChange(File file) {
+					// code for processing change event
+					System.out.println("FILE CHANGED" + file.getPath());
+					log.info("FILE MODIFIED: "+file.getName());
+					try {
+						sendFileForProcessing(file);
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						log.error("ERROR ON FILE CHANGE EVENT:"+file.getName()+" :: "+e.getMessage()); 
+						e.printStackTrace();
+					}
+				}
+
+				private void sendFileForProcessing(File file) {
+					try {
+
+						FileInputStream fis = new FileInputStream(file);
+						HttpClient httpclient = HttpClientBuilder.create().build();
+						// DefaultHttpClient httpclient = new DefaultHttpClient(new BasicHttpParams());
+
+						HttpPost httppost = new HttpPost(baseURL + "/attendance/csvuploader/" + orgId);
+						MultipartEntity entity = new MultipartEntity();
+						// set the file input stream and file name as arguments
+						entity.addPart("file", new InputStreamBody(fis, file.getName()));
+
+						httppost.setEntity(entity);
+						// execute the request
+						HttpResponse response = httpclient.execute(httppost);
+
+						int statusCode = response.getStatusLine().getStatusCode();
+						HttpEntity responseEntity = response.getEntity();
+						String responseString = EntityUtils.toString(responseEntity, "UTF-8");
+					
+						log.info("FILE: "+file.getName()+" REPONSE CODE:[" + statusCode + "] RESPONSE MSG: " + responseString);
+						System.out.println("[" + statusCode + "] " + responseString);
+
+					} catch (MalformedURLException e) {
+						log.error("EXCEPTION WHILE SENDING REQUEST:"+file.getName()+" :: "+e.getMessage());
+						e.printStackTrace();
+
+					} catch (IOException e) {
+						log.error("IO EXCEPTION WHILE SENDING REQUEST:"+file.getName()+" :: "+e.getMessage());
+						e.printStackTrace();
+					}
+				}
+			};
+			observer.addListener(listener);
+			monitor.addObserver(observer);
+			monitor.start();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+	}
+	
+	@Scheduled(fixedDelay = 15000, initialDelay = 5000)
+//	@Scheduled(cron = "0 1,11,21,31,41,51,59 * * * *")  // (cron = "ss min hh dd mm yyyy")
+	public void mdbDataUploader() {
+		
+		System.out.println("MDB Data Uploader Started");
+		  	Connection connection = null;
+	        Statement statement = null;
+	        ResultSet resultSet = null;
+	        
+	        LocalDate currDate = LocalDate.now();
+            int year = currDate.getYear();
+            int month = currDate.getMonthValue();
+            String tableName="DeviceLogs_"+month+"_"+year;
+            String databaseURL = "jdbc:ucanaccess://"+mdbPath;
+            
+            System.out.println(currDate.getYear()+" MONTH::"+currDate.getMonthValue());
+           log.info("FETCHING DATA FROM TABLE:: "+tableName);
+            
+            
+		 try {
+			connection = DriverManager.getConnection(databaseURL);
+			statement = connection.createStatement();
+//            resultSet = statement.executeQuery("SELECT userId, Format (logdate, \"yyyy-mm-dd\"), min(logdate), max(logdate)\r\n" + 
+  //          		"FROM "+tableName+" group by userId, Format (logdate, \"yyyy-mm-dd\") order by userId, Format (logdate, \"yyyy-mm-dd\")");
+			String query ="SELECT userid,logdate,direction FROM  "+tableName+" where Format(logdate, \"yyyy-mm-dd\") ='"+currDate+"';";
+			System.out.println(query);
+			 resultSet = statement.executeQuery(query);
+
+	
+			 List<SwipeDataVO> swipeDataVOList = new ArrayList<SwipeDataVO>();
+			 
+			 while(resultSet.next()) {
+				 SwipeDataVO newSwipeData = new SwipeDataVO();
+				 newSwipeData.setCardNo(resultSet.getInt(1));
+				 newSwipeData.setSwipeDateTime(resultSet.getString(2));
+				 newSwipeData.setDirection(resultSet.getString(3));
+				 newSwipeData.setOrgId(orgId);
+				 swipeDataVOList.add(newSwipeData);
+            }	
+			
+			if (!swipeDataVOList.isEmpty()) {
+				CloseableHttpClient client = HttpClients.createDefault();
+				HttpPost postRequest = new HttpPost(baseURL + "/attendance/mdbuploader");
+				postRequest.setHeader("Accept", "application/json");
+				postRequest.addHeader("content-type", "application/json");
+				ObjectMapper mapper = new ObjectMapper();
+				//   String  userEntity = mapper.writeValueAsString(swipeDataVOList);
+				StringEntity stringEntity = new StringEntity(mapper.writeValueAsString(swipeDataVOList));
+				postRequest.setEntity(stringEntity);
+				CloseableHttpResponse response = client.execute(postRequest);
+				int statusCode = response.getStatusLine().getStatusCode();
+				HttpEntity responseEntity = response.getEntity();
+				String responseString = EntityUtils.toString(responseEntity, "UTF-8");
+				log.info(" REPONSE CODE:[" + statusCode + "] RESPONSE MSG: " + responseString);
+				System.out.println("[" + statusCode + "] : " + responseString);
+				if (statusCode != 200) {
+					throw new RuntimeException("Failed with HTTP error code : " + statusCode);
+				} else if (!responseString.equals("success")) {
+					throw new RuntimeException("Failed with service error code : " + responseString);
+				} 
+			}            
+            
+		} catch (SQLException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			log.error("Exception::: "+e.getMessage());
+		}finally {
+            // Step 3: Closing database connection
+            try {
+                if(null != connection) {
+                    // cleanup resources, once after processing
+                    resultSet.close();
+                    statement.close();
+ 
+                    // and then finally close connection
+                    connection.close();
+                }
+            }
+            catch (SQLException sqlex) {
+                sqlex.printStackTrace();
+            }
+        }
+		 
+		 
+	}
+
+
+}
+

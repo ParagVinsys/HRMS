@@ -1,0 +1,19 @@
+"2018-12-17 15:32:05 [main] INFO  c.v.attendance.LauncherApplication - Starting LauncherApplication on GAWANDE-PARAG with PID 16832 (D:\Projects\AttendanceUploaderV1\Launcher\target\classes started by admin in D:\Projects\AttendanceUploaderV1\Launcher)
+""2018-12-17 15:32:05 [main] INFO  c.v.attendance.LauncherApplication - No active profile set, falling back to default profiles: default
+""2018-12-17 15:32:06 [main] INFO  c.v.attendance.LauncherApplication - Starting CSV Uploader...
+""2018-12-17 15:32:06 [main] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+""2018-12-17 15:32:06 [main] INFO  c.v.attendance.LauncherApplication - Started LauncherApplication in 1.326 seconds (JVM running for 1.992)
+""2018-12-17 15:32:52 [main] INFO  c.v.attendance.LauncherApplication - Starting LauncherApplication on GAWANDE-PARAG with PID 18820 (D:\Projects\AttendanceUploaderV1\Launcher\target\classes started by admin in D:\Projects\AttendanceUploaderV1\Launcher)
+""2018-12-17 15:32:52 [main] INFO  c.v.attendance.LauncherApplication - No active profile set, falling back to default profiles: default
+""2018-12-17 15:32:53 [main] INFO  c.v.attendance.LauncherApplication - Starting CSV Uploader...
+""2018-12-17 15:32:53 [main] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+""2018-12-17 15:32:53 [main] INFO  c.v.attendance.LauncherApplication - Started LauncherApplication in 1.54 seconds (JVM running for 2.406)
+""2018-12-17 15:35:00 [scheduling-1] INFO  c.v.attendance.LauncherApplication - FETCHING DATA FROM TABLE:: DeviceLogs_12_2018
+""2018-12-17 16:18:30 [main] INFO  c.v.attendance.LauncherApplication - Starting LauncherApplication on GAWANDE-PARAG with PID 3928 (D:\Projects\AttendanceUploaderV1\Launcher\target\classes started by admin in D:\Projects\AttendanceUploaderV1\Launcher)
+""2018-12-17 16:18:30 [main] INFO  c.v.attendance.LauncherApplication - No active profile set, falling back to default profiles: default
+""2018-12-17 16:18:32 [main] INFO  c.v.attendance.LauncherApplication - Starting CSV Uploader...
+""2018-12-17 16:18:32 [main] INFO  o.s.s.c.ThreadPoolTaskScheduler - Initializing ExecutorService 'taskScheduler'
+""2018-12-17 16:18:32 [main] INFO  c.v.attendance.LauncherApplication - Started LauncherApplication in 3.747 seconds (JVM running for 9.121)
+""2018-12-17 16:18:37 [scheduling-1] INFO  c.v.attendance.LauncherApplication - FETCHING DATA FROM TABLE:: DeviceLogs_12_2018
+""2018-12-17 16:19:39 [scheduling-1] INFO  c.v.attendance.LauncherApplication -  REPONSE CODE:[200] RESPONSE MSG: success
+"

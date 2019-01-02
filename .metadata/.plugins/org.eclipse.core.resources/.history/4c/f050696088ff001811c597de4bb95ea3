@@ -1,0 +1,5 @@
+package com.vinsys.logger;
+
+public class DynamicRollingLogFile {
+
+}

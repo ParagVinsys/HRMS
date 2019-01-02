@@ -1,0 +1,5 @@
+package com.vinsys.attendance;
+
+public class SwipeDataVO {
+
+}

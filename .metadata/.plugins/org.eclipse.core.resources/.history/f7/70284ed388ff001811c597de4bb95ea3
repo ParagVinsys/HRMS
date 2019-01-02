@@ -1,0 +1,48 @@
+package com.vinsys.logger;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+
+import ch.qos.logback.classic.PatternLayout;
+
+public class DynamicRollingLogFile {
+
+	public static Logger UploadApplicationLogger(Level level, String filePath) {
+
+		// Creates Pattern Layout
+
+		PatternLayout patternLayoutObj = new PatternLayout();
+
+		String conversionPattern = "[%p] %d %c %M - %m%n";
+
+		patternLayoutObj.setConversionPattern(conversionPattern);
+
+		// Create Daily Rolling Log File Appender
+
+		DailyRollingFileAppender rollingAppenderObj = new DailyRollingFileAppender();
+
+		rollingAppenderObj.setFile(filePath+"\\Log");
+
+		rollingAppenderObj.setDatePattern("'_'yyyy-MM-dd'.log'");
+
+		rollingAppenderObj.setLayout(patternLayoutObj);
+
+		rollingAppenderObj.activateOptions();
+
+		// Configure the Root Logger
+
+		Logger rootLoggerObj = Logger.getRootLogger();
+
+		rootLoggerObj.setLevel(level);
+
+		rootLoggerObj.addAppender(rollingAppenderObj);
+		
+		return rootLoggerObj;
+
+		// Create a Customer Logger & Logs Messages
+
+	}
+
+
+
+}
